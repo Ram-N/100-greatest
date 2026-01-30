@@ -2,12 +2,19 @@
 /private/
 /private/**
 
+# Book content (keep private until published)
+books/*/book-writeups/
+books/*/introduction/
+books/*/output/
+books/*/assembly/*assembly-instructions*.md
+
 # Common local / build junk
 __pycache__/
 *.pyc
 .DS_Store
 .vscode/
 .idea/
+*:Zone.Identifier
 
 # Secrets
 .env
@@ -21,4 +28,4 @@ __pycache__/
 
 # Database files (local tracking only)
 *.csv
-database/
+books/*/database/
