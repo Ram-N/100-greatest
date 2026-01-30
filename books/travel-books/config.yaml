@@ -1,0 +1,42 @@
+book:
+  title: "The 100 Greatest Travel Books Ever Written"
+  short_name: "travel-books"
+  target_count: 100
+  output_formats: ["docx", "pdf", "epub"]
+
+structure:
+  database_dir: "database"
+  writeups_dir: "book-writeups"
+  assembly_dir: "assembly"
+  introduction_dir: "introduction"
+  output_dir: "output"
+
+categories:
+  - id: "1_first_routes"
+    name: "First Routes and Foundational Journeys"
+  - id: "2_exploration"
+    name: "Exploration at the Edge"
+  - id: "3_slow_routes"
+    name: "Slow Routes and Long Ways Through"
+  - id: "4_frontiers"
+    name: "Frontiers and Frictions"
+  - id: "5_humbled"
+    name: "Humbled by the World"
+  - id: "6_institutional"
+    name: "Institutional Constraints"
+  - id: "7_inhabited_landscapes"
+    name: "Inhabited Landscapes"
+  - id: "8_political"
+    name: "Political Moral and Historical Reckonings"
+  - id: "9_self_reckoning"
+    name: "Self-Reckoning Through Movement"
+
+assembly:
+  order_file: "assembly/Order-of-assembly.md"
+  category_list_file: "assembly/final_category_list.md"
+
+database:
+  master_candidates: "database/master-candidates.csv"
+  final_selection: "database/final-selection.csv"
+  honorable_mentions: "database/honorable-mentions.csv"
+  writing_progress: "database/writing-progress.csv"
