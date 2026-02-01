@@ -1,31 +1,31 @@
-# Never commit private content
-/private/
-/private/**
+# VS Code workspace files
+*.code-workspace
 
-# Book content (keep private until published)
-books/*/book-writeups/
-books/*/introduction/
-books/*/output/
-books/*/assembly/*assembly-instructions*.md
-
-# Common local / build junk
+# Python
 __pycache__/
-*.pyc
-.DS_Store
-.vscode/
-.idea/
-*:Zone.Identifier
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+dist/
+build/
 
-# Secrets
-.env
-*.key
-*.pem
-*token*
-*credentials*
-
-# Generated manuscripts (local output only)
+# Output files
 *.docx
+*.pdf
+*.epub
 
-# Database files (local tracking only)
-*.csv
-books/*/database/
+# Backups
+**/output/backups-*/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Book-specific exclusions
+books/travel-books/candidate-books/
+books/travel-books/author-writeups/
