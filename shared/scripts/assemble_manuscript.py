@@ -64,25 +64,32 @@ def clean_heading_text(text):
 
 def parse_inline_formatting(text, paragraph):
     """
-    Parse inline markdown formatting (bold, italic, links) and add to paragraph.
+    Parse inline markdown formatting (bold, italic, bold+italic, links) and add to paragraph.
+    Removes all asterisks from output - they should never appear in the final document.
     """
     if not text:
         return
 
-    # Pattern to match **bold**, *italic*, and [text](url)
-    pattern = r'(\*\*.*?\*\*|\*.*?\*|\[.*?\]\(.*?\))'
+    # Pattern to match ***bold+italic***, **bold**, *italic*, and [text](url)
+    # Order matters: match triple asterisks before double or single
+    pattern = r'(\*\*\*.*?\*\*\*|\*\*.*?\*\*|\*.*?\*|\[.*?\]\(.*?\))'
     parts = re.split(pattern, text)
 
     for part in parts:
         if not part:
             continue
 
-        if part.startswith('**') and part.endswith('**'):
-            # Bold text
+        if part.startswith('***') and part.endswith('***') and len(part) > 6:
+            # Bold + Italic text (triple asterisks)
+            run = paragraph.add_run(part[3:-3])
+            run.bold = True
+            run.italic = True
+        elif part.startswith('**') and part.endswith('**') and len(part) > 4:
+            # Bold text (double asterisks)
             run = paragraph.add_run(part[2:-2])
             run.bold = True
-        elif part.startswith('*') and part.endswith('*') and not part.startswith('**'):
-            # Italic text
+        elif part.startswith('*') and part.endswith('*') and len(part) > 2:
+            # Italic text (single asterisks)
             run = paragraph.add_run(part[1:-1])
             run.italic = True
         elif part.startswith('[') and '](' in part:
@@ -99,23 +106,41 @@ def parse_inline_formatting(text, paragraph):
 
 def replace_book_number(content, book_number):
     """
-    Replace XX or existing numbers with the actual book number in the content.
-    Looks for patterns like "# XX —", "# 52 —", "**# [Entry Number] —", etc.
+    Replace XX, "Entry Number", or existing numbers with the actual book number.
+    If no number exists, add one to the first heading.
     """
     # Format number as zero-padded (01, 02, ..., 101)
     num_str = str(book_number).zfill(2)
 
-    # Replace various patterns
+    # Replace various patterns - order matters, most specific first
     patterns = [
+        # Patterns with markdown formatting
+        (r'^\*\*#\s+\[Entry Number\]\s+—', f'# {num_str} —'),  # **# [Entry Number] —
+        (r'^#\s+\*\*#\s+\[Entry Number\]\s+—', f'# {num_str} —'),  # # **# [Entry Number] —
+        (r'^#\s+Entry Number\s+—', f'# {num_str} —'),  # # Entry Number —
+        (r'^\*\*Entry Number\*\*\s+—', f'# {num_str} —'),  # **Entry Number** —
+        # Simple patterns
         (r'^#\s+XX\s+—', f'# {num_str} —'),  # # XX —
         (r'^#\s+\d+\s+—', f'# {num_str} —'),  # # 52 —
         (r'^#\s+XX\s*:', f'# {num_str}:'),    # # XX:
         (r'^#\s+\d+\s*:', f'# {num_str}:'),   # # 52:
-        (r'^\*\*#\s+\[Entry Number\]\s+—', f'# {num_str} —'),  # **# [Entry Number] —
     ]
 
     for pattern, replacement in patterns:
         content = re.sub(pattern, replacement, content, flags=re.MULTILINE)
+
+    # If no number was added (first heading has no number), add one
+    # Match: # Title (without a number)
+    # Don't match: # 01 — Title (already has number)
+    if not re.search(r'^#\s+\d{1,3}\s+[—:]', content, flags=re.MULTILINE):
+        # Add number to first heading that doesn't have one
+        content = re.sub(
+            r'^#\s+([^#\d][^\n]*)',  # # Title (no number)
+            f'# {num_str} — \\1',     # # 01 — Title
+            content,
+            count=1,
+            flags=re.MULTILINE
+        )
 
     return content
 
@@ -220,69 +245,152 @@ def add_book_entry_to_doc(doc, entry):
     """
     Add a structured book entry to the document following the specified order.
     """
-    # 1. Book Title (Heading 1)
+    # 1. Book Title (Heading 2)
     if entry['title']:
-        para = doc.add_heading(entry['title'], level=1)
-        para.runs[0].font.size = Pt(20)
+        para = doc.add_heading(entry['title'], level=2)
+        para.runs[0].font.size = Pt(18)
         para.runs[0].font.bold = True
 
-    # 2. Author Name (Heading 2)
+    # 2. Author Name (Heading 3)
     if entry['author_name']:
-        para = doc.add_heading(entry['author_name'], level=2)
-        para.runs[0].font.size = Pt(16)
+        para = doc.add_heading(entry['author_name'], level=3)
+        para.runs[0].font.size = Pt(14)
         para.runs[0].font.bold = True
 
     # 3. Signature Line Quote (centered, no label)
     if entry['signature_quote']:
+        # Blank line before
+        doc.add_paragraph()
+        # Quote
         para = doc.add_paragraph()
         para.alignment = WD_ALIGN_PARAGRAPH.CENTER
         run = para.add_run(f'"{entry["signature_quote"]}"')
         run.italic = True
         run.font.size = Pt(12)
+        # Blank line after
+        doc.add_paragraph()
 
-    # 4. The Essentials (Heading 3)
+    # 4. The Essentials (Heading 4)
     if 'essentials' in entry['sections']:
-        para = doc.add_heading('The Essentials', level=3)
-        para.runs[0].font.size = Pt(14)
+        para = doc.add_heading('The Essentials', level=4)
+        para.runs[0].font.size = Pt(12)
         add_markdown_to_doc(doc, entry['sections']['essentials'])
 
-    # 5. The Author (Heading 3) - biographical section
+    # 5. The Author section
     if 'author_bio' in entry['sections']:
-        para = doc.add_heading('The Author', level=3)
-        para.runs[0].font.size = Pt(14)
+        # 5a. The Author heading (Heading 4)
+        para = doc.add_heading('The Author', level=4)
+        para.runs[0].font.size = Pt(12)
+
+        # 5b. Author Quote (just above the biographical description)
+        if entry['author_quote']:
+            # Blank line before
+            doc.add_paragraph()
+            # Quote
+            para = doc.add_paragraph()
+            parse_inline_formatting(entry['author_quote'], para)
+            para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            for run in para.runs:
+                run.font.size = Pt(11)
+            # Blank line after
+            doc.add_paragraph()
+
+        # 5c. Author biographical paragraphs
         add_markdown_to_doc(doc, entry['sections']['author_bio'])
 
-    # 6. Author Quote (below the biographical section)
-    if entry['author_quote']:
-        para = doc.add_paragraph()
-        parse_inline_formatting(entry['author_quote'], para)
-        para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        for run in para.runs:
-            run.font.size = Pt(11)
-
-    # 7. The Book (Heading 3)
+    # 7. The Book (Heading 4)
     if 'the_book' in entry['sections']:
-        para = doc.add_heading('The Book', level=3)
-        para.runs[0].font.size = Pt(14)
+        para = doc.add_heading('The Book', level=4)
+        para.runs[0].font.size = Pt(12)
         add_markdown_to_doc(doc, entry['sections']['the_book'])
 
-    # 8. Destinations Explored (Heading 3)
+    # 8. Destinations Explored (Heading 4)
     if 'destinations' in entry['sections']:
-        para = doc.add_heading('Destinations Explored', level=3)
-        para.runs[0].font.size = Pt(14)
+        para = doc.add_heading('Destinations Explored', level=4)
+        para.runs[0].font.size = Pt(12)
         add_markdown_to_doc(doc, entry['sections']['destinations'])
 
-    # 9. Further Reading (Heading 3)
+    # 9. Further Reading (Heading 4)
     if 'further_reading' in entry['sections']:
-        para = doc.add_heading('Further Reading', level=3)
-        para.runs[0].font.size = Pt(14)
+        para = doc.add_heading('Further Reading', level=4)
+        para.runs[0].font.size = Pt(12)
         add_markdown_to_doc(doc, entry['sections']['further_reading'])
 
-    # 10. The Perfect Pairing (Heading 3)
+    # 10. The Perfect Pairing (Heading 4)
     if 'perfect_pairing' in entry['sections']:
-        para = doc.add_heading('The Perfect Pairing', level=3)
-        para.runs[0].font.size = Pt(14)
+        para = doc.add_heading('The Perfect Pairing', level=4)
+        para.runs[0].font.size = Pt(12)
         add_markdown_to_doc(doc, entry['sections']['perfect_pairing'])
+
+
+def add_honorable_mentions_to_doc(doc, md_content, category_name):
+    """
+    Parse and add honorable mentions section with special formatting.
+    Structure:
+    - "Honorable Mentions" (Heading 2)
+    - Category name (Heading 3)
+    - Description line in bold
+    - Blank line
+    - List of books
+    """
+    lines = md_content.strip().split('\n')
+
+    # Add "Honorable Mentions" heading (Heading 2)
+    para = doc.add_heading('Honorable Mentions', level=2)
+    para.runs[0].font.size = Pt(18)
+
+    # Add category name (Heading 3)
+    # Remove roman numerals and "Honorable Mentions:" prefix if present
+    clean_category = re.sub(r'^#\s*Honorable Mentions:\s*[IVX]+\.\s*', '', lines[0] if lines else '')
+    clean_category = re.sub(r'^[IVX]+\.\s*', '', clean_category)
+    clean_category = clean_category.strip('#').strip()
+
+    # Use provided category name if extraction failed
+    if not clean_category:
+        clean_category = category_name
+
+    para = doc.add_heading(clean_category, level=3)
+    para.runs[0].font.size = Pt(14)
+
+    # Find and format the description line (currently in italics)
+    description_added = False
+    in_header = True
+
+    for i, line in enumerate(lines):
+        line_stripped = line.strip()
+
+        # Skip the heading line
+        if line_stripped.startswith('#'):
+            continue
+
+        # Skip empty lines at start
+        if in_header and not line_stripped:
+            continue
+
+        # Skip horizontal rules
+        if line_stripped == '---':
+            in_header = False
+            continue
+
+        # The description line (in italic, starts with _)
+        if not description_added and line_stripped.startswith('_') and line_stripped.endswith('_'):
+            in_header = False
+            # Make it bold instead of italic
+            desc_text = line_stripped.strip('_')
+            para = doc.add_paragraph()
+            run = para.add_run(desc_text)
+            run.bold = True
+            # Blank line after
+            doc.add_paragraph()
+            description_added = True
+            continue
+
+        # Add remaining content as normal markdown
+        if not in_header:
+            # Build content from this point forward
+            remaining_content = '\n'.join(lines[i:])
+            add_markdown_to_doc(doc, remaining_content)
+            break
 
 
 def add_markdown_to_doc(doc, md_content):
@@ -322,11 +430,10 @@ def add_markdown_to_doc(doc, md_content):
                 para.runs[0].font.size = Pt(12)
                 para.runs[0].font.bold = True
 
-        # Horizontal rules
+        # Horizontal rules - skip them (often just markdown separators at end of entries)
         elif line.strip() == '---':
-            para = doc.add_paragraph()
-            para.add_run('___________________________________________')
-            para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            # Skip horizontal rules - these are usually just markdown separators
+            pass
 
         # Block quotes
         elif line.startswith('>'):
@@ -522,6 +629,13 @@ def main():
 
     print("\nStarting manuscript assembly...")
 
+    # 0. Add Title Page
+    print("Adding title page...")
+    title_para = doc.add_paragraph(config['book']['title'])
+    title_para.style = 'Title'
+    title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    doc.add_page_break()
+
     # 1. Add Preface
     print("Adding preface...")
     intro_path = get_book_path(base_path, 'introduction_dir')
@@ -557,12 +671,26 @@ def main():
         # Add page break before category introduction
         doc.add_page_break()
 
-        # Add category introduction
+        # Add category introduction as Heading 1
         category_intro_path = category_path / 'category_intro.md'
         if category_intro_path.exists():
             print(f"  Adding category intro...")
             with open(category_intro_path, 'r', encoding='utf-8') as f:
-                add_markdown_to_doc(doc, f.read())
+                intro_content = f.read()
+                # Extract heading from first line and add as Heading 1
+                lines = intro_content.strip().split('\n')
+                if lines and lines[0].startswith('#'):
+                    # Get category name from config
+                    category_name = next((cat['name'] for cat in categories_config if cat['id'] == category), category)
+                    para = doc.add_heading(category_name, level=1)
+                    para.runs[0].font.size = Pt(24)
+                    # Add rest of content as body text
+                    body_content = '\n'.join(lines[1:]).strip()
+                    if body_content:
+                        add_markdown_to_doc(doc, body_content)
+                else:
+                    # Fallback: add as-is
+                    add_markdown_to_doc(doc, intro_content)
         else:
             print(f"  Warning: {category_intro_path} not found")
 
@@ -587,6 +715,19 @@ def main():
                     book_number += 1
                 else:
                     print(f"  Warning: {book_path} not found")
+
+        # Add honorable mentions if they exist for this category
+        honorable_mentions_path = category_path / 'honorable-mentions.md'
+        if honorable_mentions_path.exists():
+            print(f"  Adding honorable mentions...")
+            # Add page break before honorable mentions
+            doc.add_page_break()
+            # Get category name from config
+            category_name = next((cat['name'] for cat in categories_config if cat['id'] == category), category)
+            with open(honorable_mentions_path, 'r', encoding='utf-8') as f:
+                add_honorable_mentions_to_doc(doc, f.read(), category_name)
+        else:
+            print(f"  No honorable mentions found for {category}")
 
     # Save the document with timestamp
     output_dir = get_book_path(base_path, 'output_dir')

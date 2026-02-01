@@ -1,0 +1,406 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Travel Book Entry Schema",
+  "version": "1.0.0",
+  "description": "Machine-readable schema for validating and generating book entries. Use alongside final-layout.md for canonical format.",
+  "last_updated": "2026-01-31",
+
+  "metadata": {
+    "entry_format": "markdown",
+    "target_word_count": {
+      "min": 300,
+      "max": 500,
+      "excludes": ["quotes", "lists"]
+    },
+    "target_length_per_section": {
+      "the_author": {
+        "min": 100,
+        "max": 150,
+        "unit": "words"
+      },
+      "the_book": {
+        "min": 150,
+        "max": 250,
+        "unit": "words"
+      }
+    }
+  },
+
+  "structure": {
+    "sections": [
+      {
+        "id": "title_block",
+        "name": "Title Block",
+        "order": 1,
+        "required": true,
+        "format": "# XX — [Book Title]\n\n### *[Subtitle or Author]*\n\n**\"[Opening Quote]\"** — *[Attribution]*\n\n---",
+        "components": {
+          "book_title": {
+            "required": true,
+            "type": "string",
+            "notes": "Official book title, properly capitalized"
+          },
+          "subtitle": {
+            "required": true,
+            "type": "string",
+            "notes": "Either book subtitle or author name in italics"
+          },
+          "opening_quote": {
+            "required": true,
+            "type": "string",
+            "min_length": 20,
+            "max_sentences": 2,
+            "location": "Must appear in first 10 lines",
+            "notes": "Memorable, evocative quote that hooks the reader"
+          },
+          "quote_attribution": {
+            "required": true,
+            "type": "string",
+            "notes": "Author name or source in italics"
+          }
+        }
+      },
+      {
+        "id": "the_essentials",
+        "name": "The Essentials",
+        "order": 2,
+        "required": true,
+        "header_format": "### **[ The Essentials ]**",
+        "components": {
+          "genre": {
+            "required": true,
+            "type": "string",
+            "format": "* **Genre:** [Primary Genre]",
+            "examples": [
+              "Expedition Memoir",
+              "Narrative History",
+              "Literary Travelogue",
+              "Journalistic Reportage",
+              "Spiritual Journey",
+              "Cultural Immersion",
+              "Adventure Travel"
+            ]
+          },
+          "sub_genre": {
+            "required": true,
+            "type": "string",
+            "format": "* **Sub-Genre:** [Secondary Genre(s)]",
+            "notes": "Can be comma-separated for multiple"
+          },
+          "keywords": {
+            "required": true,
+            "type": "array",
+            "format": "* **Keywords:** *[Keywords in italics]*",
+            "min_items": 5,
+            "max_items": 10,
+            "item_format": "italic",
+            "notes": "Include locations, themes, era, travel mode",
+            "examples": ["Mali", "Niger River", "Solo Kayaking", "Timbuktu", "19th Century"]
+          },
+          "traveler_profile": {
+            "required": true,
+            "type": "object",
+            "format": "* **Traveler Profile:** **[Archetype].** [Description]",
+            "properties": {
+              "archetype": {
+                "type": "string",
+                "format": "bold",
+                "examples": [
+                  "The Solitary Seeker",
+                  "The Grand Chronicler",
+                  "The Cultural Observer",
+                  "The Adventure Seeker",
+                  "The Philosophical Wanderer",
+                  "The Armchair Explorer",
+                  "The Historical Detective"
+                ]
+              },
+              "description": {
+                "type": "string",
+                "max_sentences": 2,
+                "notes": "Who should read this book and why"
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "the_author",
+        "name": "The Author",
+        "order": 3,
+        "required": true,
+        "header_formats": [
+          "### **[ The Author ]**",
+          "### **[ The Author: [Full Name (Birth–Death)] ]**"
+        ],
+        "content": {
+          "type": "prose",
+          "min_words": 100,
+          "max_words": 150,
+          "min_characters": 50,
+          "paragraphs": "1-3",
+          "topics": [
+            "Professional background",
+            "Why qualified to write this book",
+            "Writing style and voice",
+            "Impact on travel literature",
+            "Relevant life experiences"
+          ]
+        }
+      },
+      {
+        "id": "the_book",
+        "name": "The Book",
+        "order": 4,
+        "required": true,
+        "header_formats": [
+          "### **[ The Book ]**",
+          "### **[ The Book: *[Title]* ]**"
+        ],
+        "content": {
+          "type": "prose",
+          "min_words": 150,
+          "max_words": 250,
+          "min_characters": 50,
+          "paragraphs": "2-4",
+          "topics": [
+            "The journey: where, when, how long",
+            "Writing quality and style",
+            "What makes it significant or unique",
+            "Historical/cultural context",
+            "Key themes or insights",
+            "Why it belongs in top 100"
+          ]
+        }
+      },
+      {
+        "id": "destinations_or_figures",
+        "name": "Destinations Explored OR Major Figures Explored",
+        "order": 5,
+        "required": true,
+        "mutually_exclusive": true,
+        "options": [
+          {
+            "id": "destinations_explored",
+            "header_format": "### **[ Destinations Explored ]**",
+            "use_when": "Book is a geographic travel narrative",
+            "list_format": "* **[Location Name]:** [1-2 sentence description]",
+            "min_items": 3,
+            "max_items": 6,
+            "notes": "Be evocative, not just factual. Capture the essence of each place."
+          },
+          {
+            "id": "major_figures_explored",
+            "header_format": "### **[ Major Figures Explored ]**",
+            "use_when": "Book is historical, biographical, or focuses on people over places",
+            "list_format": "* **[Person Name]:** [Role and significance]",
+            "min_items": 3,
+            "max_items": 6,
+            "notes": "Include dates if relevant, explain why they matter"
+          }
+        ]
+      },
+      {
+        "id": "further_reading",
+        "name": "Further Reading",
+        "order": 6,
+        "required": true,
+        "header_format": "### **[ Further Reading ]**",
+        "subsections": [
+          {
+            "id": "by_author",
+            "name": "By [Author Last Name]",
+            "header_format": "**By [Author Last Name]:**",
+            "required": false,
+            "notes": "Omit if author has no other relevant travel books",
+            "list_format": "* ***[Book Title]***: [One-sentence description]",
+            "min_items": 1,
+            "max_items": 3,
+            "item_content": "Other travel/adventure books by same author only"
+          },
+          {
+            "id": "similar_vein",
+            "name": "In a Similar Vein",
+            "header_format": "**In a Similar Vein:**",
+            "required": true,
+            "list_format": "* ***[Book Title]*** by [Author Name]: [One-sentence description]",
+            "min_items": 2,
+            "max_items": 4,
+            "item_content": "Books that pair thematically, geographically, or stylistically. At least one from within the 100 if applicable."
+          }
+        ]
+      },
+      {
+        "id": "signature_line",
+        "name": "The Signature Line",
+        "order": 7,
+        "required": true,
+        "header_format": "### **[ The Signature Line ]**",
+        "content": {
+          "type": "blockquote",
+          "format": "> \"[Quote from book]\"",
+          "min_length": 10,
+          "max_sentences": 2,
+          "notes": "The single most defining quote from the book. Should capture its essence."
+        }
+      },
+      {
+        "id": "perfect_pairing",
+        "name": "The Perfect Pairing",
+        "order": 8,
+        "required": true,
+        "header_format": "### **[ The Perfect Pairing ]**",
+        "subsections": [
+          {
+            "id": "drink",
+            "name": "The Drink",
+            "required": true,
+            "format": "* **The Drink:** [Beverage description]",
+            "notes": "Beverage that matches book's atmosphere. Be specific: type, temperature, serving style."
+          },
+          {
+            "id": "soundtrack",
+            "name": "The Soundtrack",
+            "required": true,
+            "format": "* **The Soundtrack:** [Music or ambient sounds]",
+            "notes": "Music, specific artist/composer, or ambient sounds that evoke the journey"
+          },
+          {
+            "id": "setting",
+            "name": "The Setting",
+            "required": true,
+            "format": "* **The Setting:** [Ideal reading environment]",
+            "notes": "Where and when to read. Include time of day, weather, location details."
+          }
+        ]
+      }
+    ]
+  },
+
+  "formatting_rules": {
+    "markdown": {
+      "section_headers": {
+        "format": "### **[ Section Name ]**",
+        "level": 3,
+        "bold": true,
+        "brackets": true,
+        "spacing": "Exact spacing required"
+      },
+      "book_titles": {
+        "format": "***Title***",
+        "style": "bold italic"
+      },
+      "emphasis": {
+        "italic": "*text*",
+        "bold": "**text**",
+        "bold_italic": "***text***"
+      },
+      "lists": {
+        "bullet_char": "*",
+        "indentation": 4
+      },
+      "quotes": {
+        "blockquote": "> ",
+        "inline": "\"text\"",
+        "attribution": "— *Author*"
+      },
+      "horizontal_rules": {
+        "style": "---",
+        "spacing": "Blank line before and after"
+      }
+    },
+    "style_guide": {
+      "tone": "Encyclopedic but engaging, authoritative without being academic",
+      "perspective": "Third person for descriptions, second person acceptable for Traveler Profile",
+      "tense": "Present tense for book content, past tense for history and biography",
+      "voice": "Active voice preferred",
+      "emojis": "Prohibited unless explicitly requested"
+    }
+  },
+
+  "validation_rules": {
+    "required_sections": [
+      "title_block",
+      "the_essentials",
+      "the_author",
+      "the_book",
+      "destinations_or_figures",
+      "further_reading",
+      "signature_line",
+      "perfect_pairing"
+    ],
+    "content_minimums": {
+      "the_author": {
+        "characters": 50,
+        "words": 100
+      },
+      "the_book": {
+        "characters": 50,
+        "words": 150
+      }
+    },
+    "quote_requirements": {
+      "opening_quote": {
+        "location": "First 10 lines",
+        "format": "Bold with attribution"
+      },
+      "signature_line": {
+        "format": "Blockquote"
+      }
+    }
+  },
+
+  "special_cases": {
+    "historical_books_pre_1800": {
+      "examples": ["Marco Polo", "Ibn Battuta", "Pigafetta"],
+      "allowances": [
+        "May omit 'By [Author]:' subsection in Further Reading",
+        "Major Figures Explored often more appropriate than Destinations"
+      ]
+    },
+    "anthologies": {
+      "the_book_focus": "Explain collection's scope and structure",
+      "destinations_figures": "Can reflect range of collection",
+      "traveler_profile": "Address anthology format benefits"
+    },
+    "place_vs_journey": {
+      "journey_focused": {
+        "emphasis": "Route, mode, duration",
+        "destinations": "Stops along the way"
+      },
+      "place_focused": {
+        "emphasis": "Depth of cultural immersion",
+        "destinations": "Single city/region with neighborhoods as sub-items"
+      }
+    }
+  },
+
+  "ai_generation_guidelines": {
+    "workflow": [
+      "1. Research book thoroughly (publication date, critical reception, key quotes)",
+      "2. Verify author name spelling and dates",
+      "3. Use web search for accurate facts",
+      "4. Match tone/style to existing entries in corpus",
+      "5. Ensure keywords are searchable and relevant",
+      "6. Create vivid, specific Traveler Profile persona",
+      "7. Make Perfect Pairing creative and book-specific (not generic)",
+      "8. Validate against schema before finalizing"
+    ],
+    "quality_checklist": [
+      "All required sections present in correct order",
+      "Section headers match exact format",
+      "Word counts within target ranges",
+      "Quotes properly formatted and attributed",
+      "No emojis (unless requested)",
+      "Lists use correct bullet format",
+      "Horizontal rules properly placed",
+      "Content is substantive (not placeholder text)"
+    ]
+  },
+
+  "tools": {
+    "validation": "validate_entries.py - Automated validation against this schema",
+    "conversion": "split_journey_sections.py - Convert legacy formats to canonical structure",
+    "assembly": "assemble_manuscript.py - Compile entries into Word document"
+  }
+}
