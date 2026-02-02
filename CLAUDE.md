@@ -50,7 +50,13 @@ All commands assume you're in a book directory (e.g., `books/travel-books/`). Sc
 cd /home/ram/projects/100-greatest-series/books/travel-books
 
 # Assemble complete manuscript into Word document
-python3 ../../shared/scripts/assemble_manuscript.py
+python3 ../../shared/scripts/assembly/assemble_manuscript.py
+
+# FOR PDF/PRINT: Add Table of Contents and Index (with page numbers)
+python3 ../../shared/scripts/add_toc_and_index.py
+
+# FOR KINDLE/EBOOK: Prepare for Amazon KDP (no page numbers, no index)
+python3 ../../shared/scripts/prepare_for_kdp.py
 
 # Get intelligent recommendations for which books to write next
 python3 ../../shared/scripts/recommend_next.py --limit 10
@@ -78,8 +84,8 @@ Required packages:
 
 Installation:
 ```bash
-# Use existing venv from original project
-source /home/ram/projects/100TravelBooks/venv/bin/activate
+# Use series venv
+source venv/bin/activate
 
 # Or create new venv
 cd /home/ram/projects/100-greatest-series
@@ -147,14 +153,26 @@ Travel books organize entries into 9 thematic categories:
 
 Categories are defined in `config.yaml` and drive directory structure, manuscript assembly, and recommendation engine.
 
-### Manuscript Assembly
+### Manuscript Assembly (Data-Driven)
 
-The `assemble_manuscript.py` script:
-- Reads assembly order from `assembly/Order-of-assembly.md`
-- Collects introduction, category intros, and book entries
+The assembly system is completely data-driven (refactored 2026-02-01):
+
+**Key files**:
+- `shared/scripts/assembly/assemble_manuscript.py` - Main script
+- `books/{book}/assembly/assembly-spec.json` - Document structure and formatting
+- `books/{book}/assembly/book-metadata.json` - Book metadata (year, author, etc.)
+
+**How it works**:
+- Reads assembly spec (heading styles, section order, formatting rules)
+- Loads book metadata (publication year for sorting)
+- Applies ordering rules (e.g., sort by year within categories)
 - Generates formatted Word document with proper styling
-- Outputs to configured `output_dir`
+- Outputs to configured `output_dir` with timestamp
 - Processes 100+ entries in seconds
+
+**Ordering rules**: Books are sorted dynamically by metadata field (currently: publication year, ascending). Change sorting by editing `assembly-spec.json`.
+
+**Book-agnostic**: Works with any book that has proper config + spec. See `shared/docs/ASSEMBLY-SYSTEM.md` for full documentation.
 
 ### Recommendation Engine
 
@@ -231,6 +249,12 @@ For travel books (adapt for other genres):
 
 ### assemble_manuscript.py
 Compiles complete manuscript from individual entries into Word document. Uses assembly order file and category structure from config.
+
+### add_toc_and_index.py
+Post-processing script that adds Table of Contents and comprehensive Index to assembled manuscripts. Uses Word field codes for accurate page numbers. Requires one manual F9 keypress in Word to update fields. Suitable for PDF/print publishing. See `shared/docs/TOC-AND-INDEX.md` for full documentation.
+
+### prepare_for_kdp.py
+Prepares manuscripts for Kindle Direct Publishing (KDP). Removes page numbers from TOC, adds "toc" bookmark (KDP requirement), removes Index section (not useful in ebooks). Optimizes for Kindle navigation. See `shared/docs/KDP-PREPARATION.md` for full documentation.
 
 ### recommend_next.py
 Intelligent recommendation engine suggesting which books to write next based on diversity gaps, geographic coverage, and quality distribution.
