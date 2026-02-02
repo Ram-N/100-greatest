@@ -81,8 +81,10 @@ class EntryValidator:
 
         self._check_title_block()
         self._check_opening_quote()
+        self._check_subtitle_vs_author()
         self._check_required_sections()
         self._check_alternative_sections()
+        self._check_author_section()
         self._check_section_content("the_author", "The Author")
         self._check_section_content("the_book", "The Book")
         self._check_signature_line()
@@ -102,19 +104,82 @@ class EntryValidator:
             self.suggestions.append("Add title in format: # XX — [Book Title]")
 
     def _check_opening_quote(self):
-        """Check if there's an opening quote in the first 10 lines."""
-        top_section = '\n'.join(self.lines[:10])
+        """Check if there's an opening quote with proper attribution in the first 20 lines."""
+        top_section = '\n'.join(self.lines[:20])
 
-        # Look for quoted text
+        # Look for quoted text (allowing multiple quotes, question marks, etc.)
         has_quote = (
             re.search(r'^>\s+', top_section, re.MULTILINE) or
-            re.search(r'\*\*"[^"]{20,}"\*\*', top_section) or
-            re.search(r'"[^"]{20,}".*—', top_section)
+            re.search(r'\*\*"[^"]{10,}', top_section) or  # At least 10 chars after quote starts
+            re.search(r'"[^"]{10,}"', top_section)
         )
 
         if not has_quote:
-            self.issues.append("Missing opening quote (must be in first 10 lines)")
+            self.issues.append("Missing opening quote (must be in first 20 lines)")
             self.suggestions.append("Add opening quote in format: **\"Quote text\"** — *Author*")
+            return
+
+        # Check if quote has proper attribution
+        # Handles: **"Quote"** — *Author* OR **"Quote" "Quote2"** — *Author*
+        # Also accepts regular hyphen - or em-dash —
+        quote_with_attribution = re.search(
+            r'\*\*"[^*]+"\*\*\s*[—\-]\s*\*([^*]+)\*',
+            top_section
+        )
+
+        if not quote_with_attribution:
+            self.issues.append("Opening quote missing author attribution")
+            self.suggestions.append(
+                "Add author attribution to quote:\n"
+                "  **\"Quote text\"** — *Author Name*\n"
+                "  (Use em-dash — not hyphen -)"
+            )
+
+    def _check_subtitle_vs_author(self):
+        """Check if H3 subtitle contains actual author name vs. descriptive subtitle."""
+        # Look for ### *...* pattern in first 15 lines
+        top_section = '\n'.join(self.lines[:15])
+        subtitle_match = re.search(r'###\s+\*([^*]+)\*', top_section)
+
+        if not subtitle_match:
+            return  # No subtitle found, that's okay
+
+        subtitle_text = subtitle_match.group(1).strip()
+
+        # Check if subtitle looks like a descriptive phrase rather than a name
+        subtitle_indicators = [
+            'by ', 'through', 'across', 'journey', 'voyage', 'walk',
+            'travels', 'routes', 'expedition', 'adventure', 'quest',
+            'road to', 'path to', 'way to', 'into', 'among', 'with',
+            'searching for', 'in search of', 'on the trail'
+        ]
+
+        subtitle_lower = subtitle_text.lower()
+        if any(indicator in subtitle_lower for indicator in subtitle_indicators):
+            # This looks like a subtitle, not an author name
+            # Extract real author from opening quote
+            quote_pattern = r'\*\*"[^"]+"\*\*\s*—\s*\*([^*]+)\*'
+            quote_match = re.search(quote_pattern, top_section)
+
+            if quote_match:
+                author_from_quote = quote_match.group(1).strip()
+                self.issues.append(
+                    f"CRITICAL: H3 contains subtitle '{subtitle_text}' instead of author name"
+                )
+                self.suggestions.append(
+                    f"Remove subtitle or move it elsewhere. The author name is: {author_from_quote}\n"
+                    f"  Change: ### *{subtitle_text}*\n"
+                    f"  To: ### *{author_from_quote}*\n"
+                    f"  OR remove subtitle entirely and put author in 'The Author' heading"
+                )
+            else:
+                self.issues.append(
+                    f"CRITICAL: H3 contains subtitle '{subtitle_text}' instead of author name"
+                )
+                self.suggestions.append(
+                    "Remove subtitle or replace with actual author name\n"
+                    "  OR put author name in 'The Author' section heading"
+                )
 
     def _check_required_sections(self):
         """Check if all required section headers are present."""
@@ -166,6 +231,59 @@ class EntryValidator:
                 "  - ### **[ Destinations Explored ]** (for geographic travel)\n"
                 "  - ### **[ Major Figures Explored ]** (for historical/biographical works)"
             )
+
+    def _check_author_section(self):
+        """Check if The Author section includes author name in the heading - REQUIRED."""
+        # Look for The Author section header
+        pattern = r'###\s+\*\*\[\s*The Author(?:\s*:\s*([^\]]+))?\s*\]\*\*'
+        match = re.search(pattern, self.content, re.MULTILINE)
+
+        if not match:
+            return  # Section missing - will be caught by _check_required_sections
+
+        # Check if author name is in the heading (captured group 1)
+        author_in_heading = match.group(1)
+
+        if not author_in_heading or not author_in_heading.strip():
+            # CRITICAL ERROR: Author name is REQUIRED in heading
+            # Try to extract author name from other sources to help with fix
+
+            # Check opening quote for author attribution
+            opening_quote_pattern = r'\*\*"[^"]+"\*\*\s*—\s*\*([^*]+)\*'
+            quote_match = re.search(opening_quote_pattern, self.content)
+
+            # Check H3 subtitle (but validate it's not a descriptive subtitle)
+            subtitle_pattern = r'###\s+\*([^*]+)\*'
+            subtitle_match = re.search(subtitle_pattern, self.content)
+
+            author_found = None
+            if quote_match:
+                author_found = quote_match.group(1).strip()
+            elif subtitle_match:
+                subtitle_text = subtitle_match.group(1).strip()
+                # Only use subtitle if it looks like a name (not descriptive)
+                subtitle_indicators = ['by ', 'through', 'across', 'journey', 'voyage']
+                if not any(ind in subtitle_text.lower() for ind in subtitle_indicators):
+                    author_found = subtitle_text
+
+            if author_found:
+                self.issues.append(
+                    "CRITICAL: Author name missing from 'The Author' section heading"
+                )
+                self.suggestions.append(
+                    f"Author name MUST be in the heading:\n"
+                    f"  Change: ### **[ The Author ]**\n"
+                    f"  To: ### **[ The Author: {author_found} ]**\n"
+                    f"  (Add birth-death years if known)"
+                )
+            else:
+                self.issues.append(
+                    "CRITICAL: Author name missing from 'The Author' section heading and cannot be found elsewhere"
+                )
+                self.suggestions.append(
+                    "Add author name to The Author heading:\n"
+                    "  ### **[ The Author: Author Name (birth–death) ]**"
+                )
 
     def _check_section_content(self, section_id: str, section_name: str):
         """Check if a section has substantive content."""
@@ -502,37 +620,65 @@ def validate_multiple_files(
 def print_summary_report(
     total: int,
     issues_count: int,
-    issues_by_file: Dict[str, List[str]]
+    issues_by_file: Dict[str, List[str]],
+    output_dir: Optional[Path] = None,
+    book_root: Optional[Path] = None
 ):
-    """Print summary validation report for multiple files."""
-    print("\n" + "=" * 70)
-    print("VALIDATION REPORT")
-    print("=" * 70)
-
-    print(f"\nTotal entries validated: {total}")
-    print(f"Entries with issues: {issues_count}")
-    print(f"Entries passing validation: {total - issues_count}")
+    """Print summary validation report for multiple files and optionally save to file."""
+    # Build report content
+    report_lines = []
+    report_lines.append("=" * 70)
+    report_lines.append("VALIDATION REPORT")
+    report_lines.append("=" * 70)
+    report_lines.append("")
+    report_lines.append(f"Total entries validated: {total}")
+    report_lines.append(f"Entries with issues: {issues_count}")
+    report_lines.append(f"Entries passing validation: {total - issues_count}")
 
     if issues_by_file:
-        print(f"\n{'=' * 70}")
-        print("ISSUES FOUND")
-        print("=" * 70)
+        report_lines.append("")
+        report_lines.append("=" * 70)
+        report_lines.append("ISSUES FOUND")
+        report_lines.append("=" * 70)
 
         for filepath, issues in sorted(issues_by_file.items()):
-            print(f"\n📄 {filepath}")
+            report_lines.append("")
+            report_lines.append(f"📄 {filepath}")
             for issue in issues:
-                print(f"   ❌ {issue}")
+                report_lines.append(f"   ❌ {issue}")
     else:
-        print("\n✅ All entries passed validation!")
+        report_lines.append("")
+        report_lines.append("✅ All entries passed validation!")
 
-    print("\n" + "=" * 70)
+    report_lines.append("")
+    report_lines.append("=" * 70)
 
     if issues_count > 0:
-        print(f"\n⚠️  Found {issues_count} entries with issues")
-        print("   Run validation on individual files for detailed feedback")
+        report_lines.append("")
+        report_lines.append(f"⚠️  Found {issues_count} entries with issues")
+        report_lines.append("   Run validation on individual files for detailed feedback")
+    else:
+        report_lines.append("")
+        report_lines.append("✅ All entries are ready for assembly!")
+
+    # Print to screen
+    print("\n" + "\n".join(report_lines))
+
+    # Write to file if output_dir provided
+    if output_dir and book_root:
+        report_filename = f"validation-summary-{datetime.now().strftime('%Y%m%d-%H%M%S')}.txt"
+        report_path = output_dir / report_filename
+
+        with open(report_path, 'w', encoding='utf-8') as f:
+            f.write("\n".join(report_lines))
+            f.write("\n")
+
+        rel_path = report_path.relative_to(book_root)
+        print(f"\n📄 Report saved to: {rel_path}")
+
+    if issues_count > 0:
         return 1
     else:
-        print("\n✅ All entries are ready for assembly!")
         return 0
 
 
@@ -643,7 +789,13 @@ Examples:
             verbose=args.verbose
         )
 
-        exit_code = print_summary_report(total, issues_count, issues_by_file)
+        exit_code = print_summary_report(
+            total,
+            issues_count,
+            issues_by_file,
+            output_dir=output_dir,
+            book_root=book_root
+        )
         return exit_code
 
 
