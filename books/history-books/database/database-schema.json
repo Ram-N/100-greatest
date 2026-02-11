@@ -1,0 +1,335 @@
+{
+  "schema_version": "1.0",
+  "book_type": "history",
+  "description": "Database schema for The 100 Greatest History Books",
+  "last_updated": "2026-02-10",
+
+  "fields": [
+    {
+      "name": "ID",
+      "type": "integer",
+      "required": true,
+      "description": "Unique identifier for each book (1-200 for candidates)",
+      "validation": {
+        "min": 1,
+        "max": 200
+      }
+    },
+    {
+      "name": "Status",
+      "type": "enum",
+      "required": true,
+      "description": "Current status in selection workflow",
+      "values": [
+        "Candidate",
+        "Selected",
+        "HonorableMention",
+        "Cut",
+        "Completed"
+      ],
+      "default": "Candidate"
+    },
+    {
+      "name": "Title",
+      "type": "text",
+      "required": true,
+      "description": "Full book title",
+      "example": "The Guns of August"
+    },
+    {
+      "name": "Author",
+      "type": "text",
+      "required": true,
+      "description": "Author's full name (First Last or Last, First)",
+      "example": "Barbara Tuchman"
+    },
+    {
+      "name": "author_gender",
+      "type": "enum",
+      "required": false,
+      "description": "Author's gender identity",
+      "values": ["male", "female", "nonbinary", "unknown"],
+      "default": "unknown",
+      "notes": "Use author's self-identification when available"
+    },
+    {
+      "name": "author_person_of_color",
+      "type": "enum",
+      "required": false,
+      "description": "Is author a person of color?",
+      "values": ["yes", "no", "unknown"],
+      "default": "unknown"
+    },
+    {
+      "name": "author_indigenous",
+      "type": "enum",
+      "required": false,
+      "description": "Is author indigenous?",
+      "values": ["yes", "no", "unknown"],
+      "default": "unknown"
+    },
+    {
+      "name": "author_identity_notes",
+      "type": "text",
+      "required": false,
+      "description": "Source for identity information (e.g., 'Wikipedia bio', 'Author's official website')",
+      "example": "Publisher bio page"
+    },
+    {
+      "name": "Year",
+      "type": "integer",
+      "required": false,
+      "description": "Publication year (first edition)",
+      "validation": {
+        "min": 1800,
+        "max": 2030
+      },
+      "example": 1962
+    },
+    {
+      "name": "time_period_covered",
+      "type": "text",
+      "required": false,
+      "description": "Historical period(s) covered by the book",
+      "example": "August 1914 - September 1914",
+      "notes": "Can be a range, single year, or era name"
+    },
+    {
+      "name": "era_category",
+      "type": "enum",
+      "required": false,
+      "description": "Broad historical era covered",
+      "values": [
+        "Ancient (pre-500 CE)",
+        "Medieval (500-1500)",
+        "Early Modern (1500-1800)",
+        "19th Century (1800-1900)",
+        "20th Century (1900-2000)",
+        "21st Century (2000+)",
+        "Multiple Eras",
+        "Thematic (spans eras)"
+      ]
+    },
+    {
+      "name": "geographic_scope",
+      "type": "text",
+      "required": false,
+      "description": "Pipe-separated list of continents/regions covered",
+      "example": "Europe|Asia",
+      "values_guide": [
+        "Africa",
+        "Asia",
+        "Europe",
+        "North America",
+        "South America",
+        "Oceania",
+        "Middle East",
+        "Global",
+        "Atlantic World",
+        "Mediterranean"
+      ]
+    },
+    {
+      "name": "Primary_Region",
+      "type": "text",
+      "required": false,
+      "description": "Primary geographic focus",
+      "example": "Western Europe"
+    },
+    {
+      "name": "history_type",
+      "type": "text",
+      "required": false,
+      "description": "Type(s) of history - can be multiple, pipe-separated",
+      "example": "Military|Political",
+      "values_guide": [
+        "Military",
+        "Political",
+        "Social",
+        "Cultural",
+        "Economic",
+        "Intellectual",
+        "Biographical",
+        "Environmental",
+        "Scientific",
+        "Religious",
+        "Art & Architecture",
+        "Daily Life",
+        "Women's History",
+        "Labor History",
+        "Colonial/Imperial",
+        "Revolutionary"
+      ]
+    },
+    {
+      "name": "narrative_style",
+      "type": "enum",
+      "required": false,
+      "description": "Primary writing/narrative style",
+      "values": [
+        "Academic",
+        "Popular Narrative",
+        "Microhistory",
+        "Biography",
+        "Synthesis/Survey",
+        "Analytical",
+        "Journalistic",
+        "Literary",
+        "Comparative"
+      ]
+    },
+    {
+      "name": "historiographical_approach",
+      "type": "text",
+      "required": false,
+      "description": "Scholarly approach or school of thought",
+      "example": "Social history from below",
+      "notes": "e.g., Annales School, Marxist, Revisionist, Traditional, Postcolonial"
+    },
+    {
+      "name": "primary_sources",
+      "type": "enum",
+      "required": false,
+      "description": "Does book heavily use primary sources?",
+      "values": ["yes", "no", "mixed", "unknown"],
+      "default": "unknown"
+    },
+    {
+      "name": "Tier",
+      "type": "enum",
+      "required": false,
+      "description": "Quality/prominence tier (1=highest)",
+      "values": [
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "tier_guide": {
+        "1": "Pulitzer/award winners, household names, defining works",
+        "2": "Essential reading, widely cited, scholarly canon",
+        "3": "Specialist favorites, academic reputation, deep dives",
+        "4": "Wildcards, niche topics, newer works, controversial"
+      }
+    },
+    {
+      "name": "awards",
+      "type": "text",
+      "required": false,
+      "description": "Major awards won (Pulitzer, National Book Award, etc.)",
+      "example": "Pulitzer Prize for General Non-Fiction (1963)"
+    },
+    {
+      "name": "reader_archetype",
+      "type": "text",
+      "required": false,
+      "description": "Who this book is for",
+      "example": "The Military History Buff",
+      "notes": "e.g., The Academic, The Popular History Fan, The Curious Generalist"
+    },
+    {
+      "name": "page_count",
+      "type": "integer",
+      "required": false,
+      "description": "Approximate page count",
+      "validation": {
+        "min": 50,
+        "max": 2000
+      }
+    },
+    {
+      "name": "accessibility",
+      "type": "enum",
+      "required": false,
+      "description": "Reading difficulty level",
+      "values": [
+        "Easy (popular, accessible)",
+        "Moderate (some background helpful)",
+        "Challenging (academic, dense)",
+        "Very Challenging (specialist)"
+      ]
+    },
+    {
+      "name": "Source",
+      "type": "text",
+      "required": false,
+      "description": "Where this candidate came from",
+      "example": "AI recommendation / Personal reading / Award list / Syllabus"
+    },
+    {
+      "name": "Notes",
+      "type": "text",
+      "required": false,
+      "description": "Any additional notes, research needed, questions",
+      "example": "Need to verify if still in print"
+    }
+  ],
+
+  "workflow_statuses": {
+    "Candidate": "Initial candidates, not yet evaluated",
+    "Selected": "Chosen for the final 100",
+    "HonorableMention": "Didn't make final 100 but worth mentioning",
+    "Cut": "Eliminated from consideration",
+    "Completed": "Selected AND writeup is complete"
+  },
+
+  "diversity_targets": {
+    "author_gender": {
+      "female": ">=30%",
+      "description": "Aim for at least 30% women historians"
+    },
+    "author_person_of_color": {
+      "yes": ">=20%",
+      "description": "Aim for at least 20% BIPOC historians"
+    },
+    "geographic_scope": {
+      "description": "Ensure coverage of all continents, not Euro/US-centric"
+    },
+    "time_periods": {
+      "description": "Balance across eras - not dominated by WWII or single period"
+    }
+  },
+
+  "validation_rules": {
+    "required_for_selected": [
+      "ID",
+      "Status",
+      "Title",
+      "Author",
+      "Year",
+      "time_period_covered",
+      "geographic_scope",
+      "history_type",
+      "Tier"
+    ],
+    "duplicates_check": ["Title", "Author"],
+    "status_progression": "Candidate -> Selected -> Completed (or Candidate -> Cut/HonorableMention)"
+  },
+
+  "csv_export_order": [
+    "ID",
+    "Status",
+    "Title",
+    "Author",
+    "author_gender",
+    "author_indigenous",
+    "author_person_of_color",
+    "author_identity_notes",
+    "Year",
+    "time_period_covered",
+    "era_category",
+    "geographic_scope",
+    "Primary_Region",
+    "history_type",
+    "narrative_style",
+    "historiographical_approach",
+    "primary_sources",
+    "Tier",
+    "awards",
+    "reader_archetype",
+    "page_count",
+    "accessibility",
+    "Source",
+    "Notes"
+  ]
+}

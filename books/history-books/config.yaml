@@ -1,0 +1,43 @@
+book:
+  title: "The 100 Greatest History Books Ever Written"
+  short_name: "history-books"
+  target_count: 100
+  output_formats: ["docx", "pdf", "epub"]
+
+structure:
+  database_dir: "database"
+  writeups_dir: "book-writeups"
+  assembly_dir: "assembly"
+  introduction_dir: "introduction"
+  output_dir: "output"
+
+# Categories can be defined later as the collection takes shape
+# For now, books will be organized into thematic groups
+categories:
+  - id: "ancient_world"
+    name: "Ancient Civilizations and Classical History"
+  - id: "medieval"
+    name: "Medieval and Renaissance"
+  - id: "revolutions"
+    name: "Revolutions and Nation-Building"
+  - id: "wars"
+    name: "Wars and Military History"
+  - id: "social_cultural"
+    name: "Social and Cultural History"
+  - id: "biography"
+    name: "Biographical and Personal Histories"
+  - id: "global"
+    name: "Global and Comparative History"
+  - id: "modern"
+    name: "Modern and Contemporary History"
+
+assembly:
+  order_file: "assembly/Order-of-assembly.md"
+  category_list_file: "assembly/final_category_list.md"
+
+database:
+  master_candidates: "database/master-candidates.csv"
+  final_selection: "database/final-selection.csv"
+  honorable_mentions: "database/honorable-mentions.csv"
+  writing_progress: "database/writing-progress.csv"
+  schema: "database/database-schema.json"

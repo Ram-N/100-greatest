@@ -6,9 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The **100 Greatest Series** is a multi-book publishing project creating curated reference guides to essential works across different genres. Each book presents 100 carefully selected titles with rich two-page spreads, designed for ebook distribution via Amazon KDP.
 
-**Current Project**: The 100 Greatest Travel Books Ever Written (123 entries complete, 9 thematic categories)
+**Active Projects**:
+- The 100 Greatest Travel Books Ever Written (123 entries complete, 9 thematic categories)
+- The 100 Greatest History Books Ever Written (setup complete, candidate collection phase)
 
-**Future Projects**: History books, biographies, and other genres
+**Future Projects**: Biographies, and other genres
 
 ## Repository Structure
 
@@ -29,14 +31,23 @@ The **100 Greatest Series** is a multi-book publishing project creating curated 
 │   └── docs/                        # Series-wide documentation
 │
 └── books/                           # Individual book projects
-    └── travel-books/                # The 100 Greatest Travel Books
-        ├── config.yaml              # Book configuration (categories, paths, metadata)
-        ├── book-writeups/           # 123 completed entries in 9 categories
-        ├── database/                # CSV databases with candidates and metadata
-        ├── templates/               # Book-specific templates
-        ├── introduction/            # Front matter
-        ├── assembly/                # Assembly instructions
-        └── output/                  # Generated manuscripts
+    ├── travel-books/                # The 100 Greatest Travel Books
+    │   ├── config.yaml              # Book configuration (categories, paths, metadata)
+    │   ├── book-writeups/           # 123 completed entries in 9 categories
+    │   ├── database/                # CSV databases with candidates and metadata
+    │   ├── templates/               # Book-specific templates
+    │   ├── introduction/            # Front matter
+    │   ├── assembly/                # Assembly instructions
+    │   └── output/                  # Generated manuscripts
+    └── history-books/               # The 100 Greatest History Books
+        ├── config.yaml              # Book configuration
+        ├── database/                # Database with JSON schema
+        │   ├── database-schema.json # Machine-readable schema
+        │   ├── master-candidates.csv # Candidate database
+        │   └── README-DATABASE.md   # Database documentation
+        ├── book-writeups/           # Completed entries (empty)
+        ├── candidate-books/         # Initial candidate lists
+        └── (standard directories...)
 ```
 
 ## Key Commands
